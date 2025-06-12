@@ -1,0 +1,330 @@
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local Players = game:GetService("Players")
+local UserInputService = game:GetService("UserInputService")
+local tweenService = game:GetService("TweenService")
+
+local player = Players.LocalPlayer
+local playerGui = player:WaitForChild("PlayerGui")
+
+local function setupGui()
+    -- Destroy existing GUI if it exists
+    local existingGui = playerGui:FindFirstChild("DraggableSummonGui")
+    if existingGui then
+        existingGui:Destroy()
+    end
+
+    -- Create a new ScreenGui for the draggable GUI
+    local screenGui = Instance.new("ScreenGui")
+    screenGui.Name = "DraggableSummonGui"
+    screenGui.ResetOnSpawn = false
+    screenGui.IgnoreGuiInset = true
+    screenGui.Parent = playerGui
+
+    -- Create a draggable Frame that will be the entire GUI
+    local dragFrame = Instance.new("Frame")
+    dragFrame.Size = UDim2.new(0, 100, 0, 137)  -- Adjusted height to fit all buttons
+    dragFrame.Position = UDim2.new(1, -120, 0, 60)  -- Lowered by 60 units
+    dragFrame.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+    dragFrame.ZIndex = 1
+    dragFrame.BorderSizePixel = 0
+    dragFrame.Parent = screenGui
+
+    -- Create a TextBox to be used for dragging
+    local dragTextBox = Instance.new("TextBox")
+    dragTextBox.Size = UDim2.new(1, 0, 1, 0)
+    dragTextBox.Position = UDim2.new(0, 0, 0, 0)
+    dragTextBox.BackgroundTransparency = 1
+    dragTextBox.Text = ""
+    dragTextBox.TextScaled = true
+    dragTextBox.ZIndex = 2
+    dragTextBox.ClearTextOnFocus = false
+    dragTextBox.TextEditable = false
+    dragTextBox.Font = Enum.Font.Gotham
+    dragTextBox.BorderSizePixel = 0
+    dragTextBox.Parent = dragFrame
+
+    local textBox = Instance.new("TextBox")
+    textBox.Size = UDim2.new(0, 92, 0, 30)
+    textBox.Position = UDim2.new(0.5, -46, 0.5, -35)
+    textBox.PlaceholderText = "[EX: CWAzurewrath3]"
+    textBox.Text = ""
+    textBox.TextScaled = true
+    textBox.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+    textBox.TextColor3 = Color3.fromRGB(255, 255, 255)
+    textBox.ZIndex = 3
+    textBox.Font = Enum.Font.Gotham
+    textBox.BorderSizePixel = 0
+    textBox.Parent = dragFrame
+
+    local summonButton = Instance.new("TextButton")
+    summonButton.Size = UDim2.new(0, 85, 0, 20)
+    summonButton.Position = UDim2.new(0.5, -42.5, 0.5, 5)
+    summonButton.Text = "[SUMMON]"
+    summonButton.TextScaled = true
+    summonButton.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+    summonButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+    summonButton.ZIndex = 3
+    summonButton.Font = Enum.Font.Gotham
+    summonButton.BorderSizePixel = 0
+    summonButton.Parent = dragFrame
+
+    local newButton = Instance.new("TextButton")
+    newButton.Size = UDim2.new(0, 90, 0, 15)
+    newButton.Position = UDim2.new(0.5, -45, 0.5, 30)
+    newButton.Text = "[!Deathwish :3!]"
+    newButton.TextScaled = true
+    newButton.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+    newButton.TextColor3 = Color3.fromRGB(0, 0, 0)
+    newButton.ZIndex = 3
+    newButton.Font = Enum.Font.Gotham
+    newButton.BorderSizePixel = 0
+    newButton.Parent = dragFrame
+
+    -- Create an animated gradient for the new button
+    local uiGradient = Instance.new("UIGradient")
+    uiGradient.Color = ColorSequence.new{
+        ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 255, 255)),
+        ColorSequenceKeypoint.new(0.4, Color3.fromRGB(0, 0, 0)),
+        ColorSequenceKeypoint.new(0.6, Color3.fromRGB(0, 0, 0)),
+        ColorSequenceKeypoint.new(1, Color3.fromRGB(255, 255, 255))
+    }
+    uiGradient.Rotation = 0
+    uiGradient.Offset = Vector2.new(-1, 0) -- Start position of the gradient
+    uiGradient.Parent = newButton
+
+    -- Function to animate the gradient
+    local tweenInfo = TweenInfo.new(0.2, Enum.EasingStyle.Linear, Enum.EasingDirection.InOut, -1, false, 0) -- Even faster animation with 0.2 second duration
+    local tweenGoal = { Offset = Vector2.new(1, 0) } -- End position of the gradient
+    local tween = tweenService:Create(uiGradient, tweenInfo, tweenGoal)
+    tween.Completed:Connect(function()
+        uiGradient.Offset = Vector2.new(-1, 0) -- Reset position of the gradient
+    end)
+    tween:Play()
+
+    -- Create the new buttons
+    local button1 = Instance.new("TextButton")
+    button1.Size = UDim2.new(0, 40, 0, 20)
+    button1.Position = UDim2.new(0.5, -46, 0.5, -60)
+    button1.Text = "[Heal Once]"
+    button1.TextScaled = true
+    button1.BackgroundColor3 = Color3.fromRGB(0, 0, 0) -- Set to black
+    button1.TextColor3 = Color3.fromRGB(255, 255, 255)
+    button1.ZIndex = 3
+    button1.Font = Enum.Font.Gotham
+    button1.BorderSizePixel = 0
+    button1.Parent = dragFrame
+
+    local button2 = Instance.new("TextButton")
+    button2.Size = UDim2.new(0, 40, 0, 20)
+    button2.Position = UDim2.new(0.5, 6, 0.5, -60)
+    button2.Text = "[Infinitely Heal]"
+    button2.TextScaled = true
+    button2.BackgroundColor3 = Color3.fromRGB(0, 0, 0) -- Set to black
+    button2.TextColor3 = Color3.fromRGB(255, 255, 255)
+    button2.ZIndex = 3
+    button2.Font = Enum.Font.Gotham
+    button2.BorderSizePixel = 0
+    button2.Parent = dragFrame
+
+    -- Create the Ragdoll button
+    local ragdollButton = Instance.new("TextButton")
+    ragdollButton.Size = UDim2.new(0, 90, 0, 12) -- Slightly lower height
+    ragdollButton.Position = UDim2.new(0.5, -45, 0.5, 50) -- Adjusted position under newButton
+    ragdollButton.Text = "[RAGDOLL]"
+    ragdollButton.TextScaled = true
+    ragdollButton.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+    ragdollButton.TextColor3 = Color3.fromRGB(0, 0, 0)
+    ragdollButton.ZIndex = 3
+    ragdollButton.Font = Enum.Font.Gotham
+    ragdollButton.BorderSizePixel = 0
+    ragdollButton.Parent = dragFrame
+
+    -- Create a gradient for the ragdoll button
+    local ragdollUiGradient = Instance.new("UIGradient")
+    ragdollUiGradient.Color = ColorSequence.new{
+        ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 255, 255)),
+        ColorSequenceKeypoint.new(0.4, Color3.fromRGB(0, 0, 0)),
+        ColorSequenceKeypoint.new(0.6, Color3.fromRGB(0, 0, 0)),
+        ColorSequenceKeypoint.new(1, Color3.fromRGB(255, 255, 255))
+    }
+    ragdollUiGradient.Rotation = 0
+    ragdollUiGradient.Offset = Vector2.new(-1, 0) -- Start position of the gradient
+    ragdollUiGradient.Parent = ragdollButton
+
+    -- Function to animate the gradient
+    local ragdollTweenInfo = TweenInfo.new(0.2, Enum.EasingStyle.Linear, Enum.EasingDirection.InOut, -1, false, 0) -- Even faster animation with 0.2 second duration
+    local ragdollTweenGoal = { Offset = Vector2.new(1, 0) } -- End position of the gradient
+    local ragdollTween = tweenService:Create(ragdollUiGradient, ragdollTweenInfo, ragdollTweenGoal)
+    ragdollTween.Completed:Connect(function()
+        ragdollUiGradient.Offset = Vector2.new(-1, 0) -- Reset position of the gradient
+    end)
+    ragdollTween:Play()
+
+    -- Button click event for summonButton
+    summonButton.MouseButton1Click:Connect(function()
+        local humanoidRootPart = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
+        if humanoidRootPart then
+            local args = {
+                textBox.Text,
+                humanoidRootPart.CFrame
+            }
+            print("Summon CFrame:", humanoidRootPart.CFrame) -- Print the CFrame to the console
+            ReplicatedStorage.Remotes.SummonEnemy:FireServer(unpack(args))
+        else
+            warn("HumanoidRootPart not found.")
+        end
+    end)
+
+    -- Button click event for newButton
+    newButton.MouseButton1Click:Connect(function()
+        print("[!Deathwish :3!] button pressed")
+
+        local function info()
+            if player:FindFirstChild("remotesFired") then
+                player.remotesFired.Value = player.remotesFired.Value + 1
+            else
+                local remotesfireda = Instance.new("IntValue", player)
+                remotesfireda.Name = "remotesFired"
+                remotesfireda.Value = 1
+            end
+
+            local remotesfired = player.remotesFired.Value
+            local number = math.ceil((remotesfired * 7 + 15) ^ 2.51 + 125.33)
+            local passwords = "{DEkfa2l31kaM-134si3-122z-"
+            local passworde = "-aaaZd13kaM-00992}"
+            local newpass = passwords .. number .. passworde
+            return newpass
+        end
+
+        for _, v in pairs(game.Workspace:GetDescendants()) do
+            if v ~= player.Character and v:FindFirstChild("Humanoid") then
+                task.spawn(ReplicatedStorage.Remotes.Damage.InvokeServer, ReplicatedStorage.Remotes.Damage, v, 9e18, info(), workspace.Time.Value)
+            end
+        end
+    end)
+
+    -- Button click event for button1
+    button1.MouseButton1Click:Connect(function()
+        print("[Heal Once] button pressed")
+
+        local function info()
+            if player:FindFirstChild("remotesFired") then
+                player.remotesFired.Value = player.remotesFired.Value + 1
+            else
+                local remotesfireda = Instance.new("IntValue", player)
+                remotesfireda.Name = "remotesFired"
+                remotesfireda.Value = 1
+            end
+
+            local remotesfired = player.remotesFired.Value
+            local number = math.ceil((remotesfired * 7 + 15) ^ 2.51 + 125.33)
+            local passwords = "{DEkfa2l31kaM-134si3-122z-"
+            local passworde = "-aaaZd13kaM-00992}"
+            local newpass = passwords .. number .. passworde
+            return newpass
+        end
+
+        for _, v in pairs(game.Workspace:GetDescendants()) do
+            if v == player.Character and v:FindFirstChild("Humanoid") then
+                task.spawn(ReplicatedStorage.Remotes.Heal.InvokeServer, ReplicatedStorage.Remotes.Heal, v, 9e18, info(), workspace.Time.Value)
+            end
+        end
+    end)
+
+    -- Button click event for button2
+    button2.MouseButton1Click:Connect(function()
+        print("[Infinitely Heal] button pressed")
+
+        local function infinitelyHeal()
+            while task.wait(0.1) do
+                local passwords = "{DEkfa2l31kaM-134si3-122z-"
+                local passworde = "-aaaZd13kaM-00992}"
+                
+                local function info()
+                    if player:FindFirstChild("remotesFired") then
+                        player.remotesFired.Value = player.remotesFired.Value + 1
+                        remotesfired = player.remotesFired.Value
+                    else
+                        local remotesfireda = Instance.new("IntValue", player)
+                        remotesfireda.Name = "remotesFired"
+                        remotesfireda.Value = 1
+                        remotesfired = remotesfireda.Value
+                    end
+                    local number = math.ceil((remotesfired * 7 + 15) ^ 2.51 + 125.33)
+                    local newpass = passwords .. number .. passworde
+                    return newpass
+                end
+                
+                for _, v in pairs(game.Workspace:GetDescendants()) do
+                    if v == player.Character and v:FindFirstChild("Humanoid") then
+                        task.spawn(ReplicatedStorage.Remotes.Heal.InvokeServer, ReplicatedStorage.Remotes.Heal, v, 9e18, info(), workspace.Time.Value)
+                    end
+                end
+            end
+        end
+
+        infinitelyHeal()
+    end)
+
+    -- Button click event for ragdollButton
+    ragdollButton.MouseButton1Click:Connect(function()
+        print("[RAGDOLL] button pressed")
+        ReplicatedStorage.Remotes.Ragdoll:FireServer()
+    end)
+
+    -- Function to make the frame draggable
+    local function makeDraggable(frame)
+        local dragInput, dragStart, startPos
+
+        local function update(input)
+            local delta = input.Position - dragStart
+            frame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+        end
+
+        frame.InputBegan:Connect(function(input)
+            if input.UserInputType == Enum.UserInputType.MouseButton1 then
+                dragInput = input
+                dragStart = input.Position
+                startPos = frame.Position
+
+                input.Changed:Connect(function()
+                    if input.UserInputState == Enum.UserInputState.End then
+                        dragInput = nil
+                    end
+                end)
+            end
+        end)
+
+        frame.InputChanged:Connect(function(input)
+            if input == dragInput then
+                UserInputService.InputChanged:Connect(update)
+            end
+        end)
+    end
+
+    -- Make the dragFrame draggable
+    makeDraggable(dragFrame)
+end
+
+-- Function to handle character respawn
+local function onCharacterAdded(character)
+    -- Setup GUI when the character is added
+    setupGui()
+end
+
+-- Setup GUI for the first character
+if player.Character then
+    setupGui()
+end
+
+-- Connect the CharacterAdded event
+player.CharacterAdded:Connect(onCharacterAdded)
+
+
+
+Make the ragdollbutton's text to [NO COOLDOWN] and change its button function to:
+
+game:GetService("ReplicatedStorage").Settings.NoCD.Value = true
+
+(Changing h int value.)
+
