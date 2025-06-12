@@ -319,12 +319,3 @@ end
 
 -- Connect the CharacterAdded event
 player.CharacterAdded:Connect(onCharacterAdded)
-
-
-
-Make the ragdollbutton's text to [NO COOLDOWN] and change its button function to:
-
-game:GetService("ReplicatedStorage").Settings.NoCD.Value = true
-
-(Changing h int value.)
-
