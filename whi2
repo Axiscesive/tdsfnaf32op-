@@ -14,7 +14,9 @@ local islandList = {
 	"Mountain Island",
 	"Desert Island",
 	"Glacier Island",
-	"Royal Island"
+	"Royal Island",
+    "Forest Island",
+    "Blizzard Island"
 }
 
 local currentIslandIndex = 1
