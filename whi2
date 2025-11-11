@@ -1,0 +1,113 @@
+--// LocalScript (StarterPlayerScripts)
+
+local player = game.Players.LocalPlayer
+local vu = game:GetService("VirtualUser")
+local char = player.Character or player.CharacterAdded:Wait()
+local hrp = char:WaitForChild("HumanoidRootPart")
+local hum = char:WaitForChild("Humanoid")
+
+--// List of island names
+local islandList = {
+	"Jungle Island",
+	"Lunar Islands",
+	"Volcano Island",
+	"Mountain Island",
+	"Desert Island",
+	"Glacier Island",
+	"Royal Island"
+}
+
+local currentIslandIndex = 1
+
+--// Get island instance
+local function getIsland()
+	local islands = workspace:FindFirstChild("Islands")
+	if not islands then return nil end
+	return islands:FindFirstChild(islandList[currentIslandIndex])
+end
+
+--// Find available horses
+local function getAllHorses()
+	local island = getIsland()
+	if not island then return {} end
+	local horses = {}
+	for _, obj in ipairs(island:GetChildren()) do
+		if obj:IsA("Model") and obj:FindFirstChild("Humanoid") and string.sub(obj.Name, 1, 1) == "{" then
+			table.insert(horses, obj)
+		end
+	end
+	return horses
+end
+
+--// Auto click and press 2
+local function autoClick()
+	vu:CaptureController()
+	vu:ClickButton1(Vector2.new())
+end
+
+local function press2()
+	vu:CaptureController()
+	vu:ClickButton2(Vector2.new())
+end
+
+--// Walk to teleporter if it exists
+local function walkToTeleporter()
+	local island = getIsland()
+	if not island then return end
+
+	local teleporter = island:FindFirstChild("Teleporter") or island:FindFirstChild("IslandTeleporter")
+	if teleporter and teleporter:FindFirstChild("Part") then
+		local tpPart = teleporter:FindFirstChild("Part")
+		warn("🚶 Walking to teleporter for " .. islandList[currentIslandIndex])
+		hum:MoveTo(tpPart.Position)
+		hum.MoveToFinished:Wait()
+	end
+end
+
+--// Move to next island
+local function nextIsland()
+	walkToTeleporter()
+	currentIslandIndex += 1
+	if currentIslandIndex > #islandList then
+		currentIslandIndex = 1
+	end
+	warn("⚠️ All horses cleared. Moving to " .. islandList[currentIslandIndex] .. " in 10 seconds...")
+	task.wait(10)
+end
+
+--// Main farming loop
+task.spawn(function()
+	while true do
+		local horses = getAllHorses()
+
+		if #horses > 0 then
+			for _, target in ipairs(horses) do
+				if target and target:FindFirstChild("HumanoidRootPart") then
+					local targetHRP = target.HumanoidRootPart
+					local lastPos = targetHRP.Position
+
+					-- Teleport to start
+					hrp.CFrame = targetHRP.CFrame + Vector3.new(0, 3, 0)
+
+					while target.Parent do
+						if target:FindFirstChild("HumanoidRootPart") then
+							local newPos = target.HumanoidRootPart.Position
+							if (newPos - lastPos).Magnitude > 1 then
+								hrp.CFrame = target.HumanoidRootPart.CFrame + Vector3.new(0, 3, 0)
+								lastPos = newPos
+							end
+							autoClick()
+							press2()
+						end
+						task.wait(0.1)
+					end
+				end
+			end
+		else
+			-- No horses left → walk to teleporter, then next island
+			nextIsland()
+		end
+
+		task.wait(1)
+	end
+end)
