@@ -1,0 +1,109 @@
+--// LocalScript (StarterPlayerScripts)
+
+local player = game.Players.LocalPlayer
+local vu = game:GetService("VirtualUser")
+local char = player.Character or player.CharacterAdded:Wait()
+local hrp = char:WaitForChild("HumanoidRootPart")
+local hum = char:WaitForChild("Humanoid")
+
+--// List of island names
+local islandList = {
+	"Jungle Island",
+	"Lunar Islands",
+	"Volcano Island",
+	"Mountain Island",
+	"Desert Island",
+	"Glacier Island",
+	"Royal Island",
+	"Forest Island",
+	"Blizzard Island",
+	"Mainland"
+}
+
+local currentIslandIndex = 1
+
+--// Press 2 once at start
+vu:CaptureController()
+vu:ClickButton2(Vector2.new())
+warn("✅ Pressed 2 / equipped skill once.")
+
+--// Get island
+local function getIsland()
+	local islands = workspace:FindFirstChild("Islands")
+	if not islands then return nil end
+	return islands:FindFirstChild(islandList[currentIslandIndex])
+end
+
+--// Get all horses (ignores player distance)
+local function getAllHorses()
+	local island = getIsland()
+	if not island then return {} end
+	local horses = {}
+	for _, obj in ipairs(island:GetChildren()) do
+		if obj:IsA("Model")
+			and obj:FindFirstChild("Humanoid")
+			and string.sub(obj.Name, 1, 1) == "{"
+			and obj.Parent == island
+			and not obj:IsDescendantOf(player) then
+			table.insert(horses, obj)
+		end
+	end
+	return horses
+end
+
+--// Auto click using VirtualUser
+local function autoClick()
+	vu:CaptureController()
+	vu:ClickButton1(Vector2.new())
+end
+
+--// Move to next island
+local function nextIsland()
+	currentIslandIndex += 1
+	if currentIslandIndex > #islandList then
+		currentIslandIndex = 1
+	end
+	warn("⚠️ All horses cleared. Moving to " .. islandList[currentIslandIndex] .. " in 5 seconds...")
+	task.wait(5)
+end
+
+--// Main farming loop
+task.spawn(function()
+	while true do
+		local horses = getAllHorses()
+
+		if #horses > 0 then
+			for _, target in ipairs(horses) do
+				if target and target:FindFirstChild("HumanoidRootPart") then
+					local targetHRP = target.HumanoidRootPart
+					local lastPos = targetHRP.Position
+					local startTime = tick()
+
+					-- Teleport instantly to horse
+					hrp.CFrame = targetHRP.CFrame + Vector3.new(0, 3, 0)
+
+					while target.Parent do
+						-- Skip after 10 seconds
+						if tick() - startTime > 10 then
+							warn("⏭️ Horse capture timeout — moving to next horse.")
+							break
+						end
+
+						if target:FindFirstChild("HumanoidRootPart") then
+							local newPos = target.HumanoidRootPart.Position
+							if (newPos - lastPos).Magnitude > 0 then -- ANY RANGE now
+								hrp.CFrame = target.HumanoidRootPart.CFrame + Vector3.new(0, 3, 0)
+								lastPos = newPos
+							end
+							autoClick()
+						end
+						task.wait(0.1)
+					end
+				end
+			end
+		else
+			nextIsland()
+		end
+		task.wait(1)
+	end
+end)
