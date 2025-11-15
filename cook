@@ -1,0 +1,133 @@
+--// LocalScript (StarterPlayerScripts)
+
+local player = game.Players.LocalPlayer
+local vu = game:GetService("VirtualUser")
+local char = player.Character or player.CharacterAdded:Wait()
+local hrp = char:WaitForChild("HumanoidRootPart")
+local hum = char:WaitForChild("Humanoid")
+
+--// List of island names
+local islandList = {
+	"Jungle Island",
+	"Lunar Islands",
+	"Volcano Island",
+	"Mountain Island",
+	"Desert Island",
+	"Glacier Island",
+	"Royal Island",
+	"Forest Island",
+	"Blizzard Island",
+	"Mainland"
+}
+
+local currentIslandIndex = 1
+
+--// Press 2 once at start
+vu:CaptureController()
+vu:ClickButton2(Vector2.new())
+warn("✅ Pressed 2 / equipped skill once.")
+
+--// Auto click
+local function autoClick()
+	vu:CaptureController()
+	vu:ClickButton1(Vector2.new())
+end
+
+--// Move to next island
+local function nextIsland()
+	currentIslandIndex += 1
+	if currentIslandIndex > #islandList then
+		currentIslandIndex = 1
+	end
+	warn("⚠️ All horses cleared. Moving to " .. islandList[currentIslandIndex] .. " in 5 seconds...")
+	task.wait(5)
+end
+
+--// Lunar Island CFrames
+local lunarCFrames = {
+	CFrame.new(-3692.81274, 36.4135818, -1903.36755, -0.999961972, -0.00777974352, 0.00393911265, -2.18779314e-05, 0.453962088, 0.891020954, -0.00872012228, 0.890986979, -0.453945041),
+	CFrame.new(-2819.17114, 54.9566841, -734.97644, 0.46053791, 0, 0.887639999, 0, 1, 0, -0.887639999, 0, 0.46053791),
+	CFrame.new(-2209.28809, 79.0938873, -2023.39929, -0.802161932, 2.71495082e-05, 0.597107172, -2.71495082e-05, 1, -8.19414199e-05, -0.597107172, -8.19414199e-05, -0.802161932),
+	CFrame.new(-2456.12891, 200.932175, -3207.65723, 0.439535409, 0, 0.898225546, 0, 1, 0, -0.898225546, 0, 0.439535409),
+	CFrame.new(-3507.54126, 42.0324898, -4021.66602, 0.0522800684, -0, -0.998632431, 0, 1, -0, 0.998632431, 0, 0.0522800684)
+}
+
+--// Get current island
+local function getIsland()
+	local islands = workspace:FindFirstChild("Islands")
+	if not islands then return nil end
+	return islands:FindFirstChild(islandList[currentIslandIndex])
+end
+
+--// Get wild horses only
+local function getAllHorses()
+	local island = getIsland()
+	if not island then return {} end
+	local horses = {}
+	for _, obj in ipairs(island:GetChildren()) do
+		if obj:IsA("Model")
+			and obj:FindFirstChild("Humanoid")
+			and string.sub(obj.Name,1,1) == "{"
+			and obj.Parent == island
+			and not obj:IsDescendantOf(player)
+			and not obj:FindFirstChild("Shop") then
+			table.insert(horses, obj)
+		end
+	end
+	return horses
+end
+
+--// Continuous Lunar CFrame loop (stops if a wild horse appears)
+spawn(function()
+	while true do
+		if islandList[currentIslandIndex] == "Lunar Islands" then
+			for _, cframe in ipairs(lunarCFrames) do
+				hrp.CFrame = cframe
+				task.wait(0.2)
+				if #getAllHorses() > 0 then
+					break
+				end
+			end
+		else
+			task.wait(1)
+		end
+	end
+end)
+
+--// Main farming loop
+task.spawn(function()
+	while true do
+		local horses = getAllHorses()
+		if #horses > 0 then
+			for _, target in ipairs(horses) do
+				if target and target:FindFirstChild("HumanoidRootPart") then
+					local targetHRP = target.HumanoidRootPart
+					local lastPos = targetHRP.Position
+					local startTime = tick()
+
+					hrp.CFrame = targetHRP.CFrame + Vector3.new(0,3,0)
+
+					while target.Parent do
+						if tick() - startTime > 10 then
+							warn("⏭️ Horse capture timeout — moving to next horse.")
+							break
+						end
+
+						if target:FindFirstChild("HumanoidRootPart") then
+							local newPos = target.HumanoidRootPart.Position
+							if (newPos - lastPos).Magnitude > 0 then
+								hrp.CFrame = targetHRP.CFrame + Vector3.new(0,3,0)
+								lastPos = newPos
+							end
+							autoClick()
+						end
+						task.wait(0.1)
+					end
+				end
+			end
+		else
+			nextIsland()
+		end
+		task.wait(1)
+	end
+end)
