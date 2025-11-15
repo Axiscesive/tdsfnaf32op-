@@ -122,3 +122,17 @@ task.spawn(function()
 							local newPos = target.HumanoidRootPart.Position
 							if (newPos - lastPos).Magnitude > 0 then
 								hrp.CFrame = target.HumanoidRootPart.CFrame + Vector3.new(0, 3, 0)
+								lastPos = newPos
+							end
+							autoClick()
+						end
+						task.wait(0.1)
+					end
+				end
+			end
+		else
+			nextIsland()
+		end
+		task.wait(1)
+	end
+end)
