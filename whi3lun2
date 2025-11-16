@@ -1,0 +1,156 @@
+
+--// LocalScript (StarterPlayerScripts)
+
+local player = game.Players.LocalPlayer
+local vu = game:GetService("VirtualUser")
+local char = player.Character or player.CharacterAdded:Wait()
+local hrp = char:WaitForChild("HumanoidRootPart")
+local hum = char:WaitForChild("Humanoid")
+
+--// List of island names
+local islandList = {
+	"Jungle Island",
+	"Lunar Islands",
+	"Volcano Island",
+	"Mountain Island",
+	"Desert Island",
+	"Glacier Island",
+	"Royal Island",
+	"Forest Island",
+	"Blizzard Island",
+	"Mainland"
+}
+
+local currentIslandIndex = 1
+
+--// The horse ID to skip
+local skipID = "{5accd19b-1c3d-480e-9ef8-19fa6af2fa49}"
+
+--// Press 2 once at start
+vu:CaptureController()
+vu:ClickButton2(Vector2.new())
+warn("✅ Pressed 2 / equipped skill once.")
+
+--// Detect the island you're in
+local function detectCurrentIsland()
+	local islandsFolder = workspace:FindFirstChild("Islands")
+	if not islandsFolder then return nil end
+
+	for _, islandName in ipairs(islandList) do
+		local island = islandsFolder:FindFirstChild(islandName)
+		if island and island:FindFirstChild(player.Name) then
+			return island
+		end
+	end
+
+	return nil
+end
+
+--// Get island
+local function getIsland()
+	local forcedIsland = detectCurrentIsland()
+	if forcedIsland then return forcedIsland end
+	return nil
+end
+
+--// Auto click using VirtualUser
+local function autoClick()
+	vu:CaptureController()
+	vu:ClickButton1(Vector2.new())
+end
+
+--// Move to next island
+local function nextIsland()
+	currentIslandIndex += 1
+	if currentIslandIndex > #islandList then
+		currentIslandIndex = 1
+	end
+	warn("⚠️ All horses cleared. Moving to " .. islandList[currentIslandIndex] .. " in 5 seconds...")
+	task.wait(5)
+end
+
+--// Lunar Island CFrames
+local lunarCFrames = {
+	CFrame.new(-3692.813, 36.413, -1903.367),
+	CFrame.new(-2819.171, 54.956, -734.976),
+	CFrame.new(-2209.288, 79.093, -2023.399),
+	CFrame.new(-2456.128, 200.932, -3207.657),
+	CFrame.new(-3507.541, 42.032, -4021.666)
+}
+
+--// Get all horses
+local function getAllHorses()
+	local island = getIsland()
+	if not island then return {} end
+
+	local horses = {}
+
+	if island.Name == "Lunar Islands" then
+		for _, cf in ipairs(lunarCFrames) do
+			hrp.CFrame = cf
+			task.wait(1) -- give time for horses to load
+
+			for _, obj in ipairs(island:GetChildren()) do
+				if obj:IsA("Model")
+				and obj:FindFirstChild("Humanoid")
+				and string.sub(obj.Name, 1, 1) == "{"
+				and obj.Name ~= skipID then -- SKIP THIS EXACT ID
+					table.insert(horses, obj)
+				end
+			end
+		end
+	else
+		for _, obj in ipairs(island:GetChildren()) do
+			if obj:IsA("Model")
+			and obj:FindFirstChild("Humanoid")
+			and string.sub(obj.Name, 1, 1) == "{"
+			and obj.Name ~= skipID then -- SKIP THIS EXACT ID
+				table.insert(horses, obj)
+			end
+		end
+	end
+
+	return horses
+end
+
+--// Main farming loop
+task.spawn(function()
+	while true do
+		local horses = getAllHorses()
+
+		if #horses > 0 then
+			for _, target in ipairs(horses) do
+				if target and target:FindFirstChild("HumanoidRootPart") then
+					local targetHRP = target.HumanoidRootPart
+					local lastPos = targetHRP.Position
+					local startTime = tick()
+
+					-- Teleport instantly to horse
+					hrp.CFrame = targetHRP.CFrame + Vector3.new(0, 3, 0)
+
+					while target.Parent do
+						-- Skip if stuck for more than 10 seconds
+						if tick() - startTime > 10 then
+							warn("⏭️ Skipping stuck horse (ID skipped automatically).")
+							break
+						end
+
+						if target:FindFirstChild("HumanoidRootPart") then
+							local newPos = target.HumanoidRootPart.Position
+							if (newPos - lastPos).Magnitude > 0 then
+								hrp.CFrame = target.HumanoidRootPart.CFrame + Vector3.new(0, 3, 0)
+								lastPos = newPos
+								startTime = tick() -- reset timer if horse moves
+							end
+							autoClick()
+						end
+						task.wait(0.1)
+					end
+				end
+			end
+		else
+			nextIsland()
+		end
+		task.wait(1)
+	end
+end)
