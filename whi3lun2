@@ -87,7 +87,7 @@ local function getAllHorses()
 	if island.Name == "Lunar Islands" then
 		for _, cf in ipairs(lunarCFrames) do
 			hrp.CFrame = cf
-			task.wait(1) -- give time for horses to load
+			task.wait(0.3)
 
 			for _, obj in ipairs(island:GetChildren()) do
 				if obj:IsA("Model")
