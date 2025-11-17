@@ -65,7 +65,7 @@ local function nextIsland()
 		currentIslandIndex = 1
 	end
 	warn("⚠️ All horses cleared. Moving to " .. islandList[currentIslandIndex] .. " in 5 seconds...")
-	task.wait(5)
+	task.wait(15)
 end
 
 --// Lunar Island CFrames
